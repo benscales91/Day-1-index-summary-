@@ -33,6 +33,53 @@ namespace starterCode
             var lw = index.LongestWord();
             Console.WriteLine($"Longest word: '{lw.word}' (count={lw.count})");
 
+            // Day 4: Alphabetical output menu
+            while (true)
+            {
+                Console.WriteLine("\nMenu:");
+                Console.WriteLine(" 1) List all words A to Z");
+                Console.WriteLine(" 2) List all words Z to A");
+                Console.WriteLine(" 3) Preview first 50 words A to Z");
+                Console.WriteLine(" 4) Preview first 50 words Z to A");
+                Console.WriteLine(" 5) Quit");
+                Console.Write("Select: ");
+                var option = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(option) || option == "5")
+                    break;
+
+                switch (option)
+                {
+                    case "1":
+                        Console.WriteLine("\nAll words A to Z:");
+                        foreach (var (word, count) in index.AllSorted(true))
+                            Console.WriteLine($"{word} : {count}");
+                        break;
+
+                    case "2":
+                        Console.WriteLine("\nAll words Z to A:");
+                        foreach (var (word, count) in index.AllSorted(false))
+                            Console.WriteLine($"{word} : {count}");
+                        break;
+
+                    case "3":
+                        Console.WriteLine("\nPreview A to Z (first 50):");
+                        foreach (var (word, count) in index.AllSorted(true).Take(50))
+                            Console.WriteLine($"{word} : {count}");
+                        break;
+
+                    case "4":
+                        Console.WriteLine("\nPreview Z to A (first 50):");
+                        foreach (var (word, count) in index.AllSorted(false).Take(50))
+                            Console.WriteLine($"{word} : {count}");
+                        break;
+
+                    default:
+                        Console.WriteLine("Please enter 1–5.");
+                        break;
+                }
+            }
+
             // Day-2: interactive queries
             while (true)
             {
@@ -46,6 +93,7 @@ namespace starterCode
                     ? "No occurrences."
                     : $"Lines: {string.Join(",", lines.Take(25))}{(lines.Count > 25 ? "..." : "")}");
             }
+
             
         }
 
