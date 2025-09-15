@@ -1,18 +1,25 @@
 ﻿using System.Linq;
 using System;
 using System.Text.RegularExpressions;
+using System.IO;
 
 namespace starterCode
 {
     internal class Program
     {
-        static string fileName = "sherlock.txt"; // file to read
+        static string fileName = "mobydick.txt"; // file to read
         static string[] linesInFile;
 
         static void Main(string[] args)
         {
             // Build the index from file (silent)
             var (index, totalWords) = BuildIndexFromFile();
+
+            if (index.UniqueCount() == 0)
+            {
+                Console.WriteLine("No valid words found.");
+                return; // stop program early
+            }
 
             // Day-1 summary only
             Console.WriteLine($"{fileName} contains {totalWords} words.");
@@ -22,7 +29,7 @@ namespace starterCode
             Console.WriteLine("Testing query...");
 
             // Day-2: test queries
-            string testWord = "watson"; // choose a word to test
+            string testWord = "the"; // choose a word to test
             Console.WriteLine($"Frequency of '{testWord}': {index.FrequencyOf(testWord)}");
             Console.WriteLine($"Lines for '{testWord}': {string.Join(",", index.LinesFor(testWord).Take(10))}...");
 
@@ -57,14 +64,12 @@ namespace starterCode
                 {
                     case "1":
                         Console.WriteLine("\nAll words A to Z:");
-                        foreach (var (word, count) in index.AllSorted(true))
-                            Console.WriteLine($"{word} : {count}");
+                        ShowWordPages(index.AllSorted(true)); // paged output
                         break;
-                    
+
                     case "2":
                         Console.WriteLine("\nAll words Z to A:");
-                        foreach (var (word, count) in index.AllSorted(false))
-                            Console.WriteLine($"{word} : {count}");
+                        ShowWordPages(index.AllSorted(false)); // paged output
                         break;
 
                     case "3":
@@ -86,43 +91,23 @@ namespace starterCode
                             break;
                         }
 
-                    case "6": // Day 5: Single search
+                    case "6": // Day 5: Single search (improved in Day 6)
                         {
-                            Console.Write("Enter a word: ");
+                            Console.Write("Type a word: ");
                             string ws = (Console.ReadLine() ?? "").Trim();
 
                             int f = index.FrequencyOf(ws);
-                            Console.WriteLine($"Frequency: {f}");
 
-                            // Print up to 30 line numbers for readability
-                            int shown = 0, total = 0;
-                            foreach (int ln in index.LinesFor(ws))
+                            // Improved feedback: tell the user if the word doesn’t appear
+                            if (f == 0)
                             {
-                                total++;
-                                if (shown == 0) Console.Write("Lines: ");
-                                if (shown < 30)
-                                {
-                                    if (shown > 0) Console.Write(",");
-                                    Console.Write(ln);
-                                    shown++;
-                                }
+                                Console.WriteLine($"'{ws}' not found in text file.");
                             }
-                            if (total == 0) Console.WriteLine("Lines: (none)");
-                            else { if (total > 30) Console.Write(" ..."); Console.WriteLine($"  ({Math.Min(shown, total)} of {total})"); }
-                            break;
-                        }
-
-                    case "7": // Day 5: Lookup loop (multi-search until blank)
-                        {
-                            while (true)
+                            else
                             {
-                                Console.Write("\nEnter a word (ENTER to stop): ");
-                                var ws = Console.ReadLine();
-                                if (string.IsNullOrWhiteSpace(ws)) break;
+                                Console.WriteLine($"Frequency: {f}");
 
-                                int f = index.FrequencyOf(ws);
-                                Console.WriteLine($"Frequency: {ws}");
-
+                                // Print up to 30 line numbers for readability
                                 int shown = 0, total = 0;
                                 foreach (int ln in index.LinesFor(ws))
                                 {
@@ -135,8 +120,53 @@ namespace starterCode
                                         shown++;
                                     }
                                 }
-                                if (total == 0) Console.WriteLine("Lines: (none)");
-                                else { if (total > 30) Console.Write(" ..."); Console.WriteLine($"  ({Math.Min(shown, total)} of {total})"); }
+
+                                if (total > 30) Console.Write(" ...");
+                                Console.WriteLine($"  ({Math.Min(shown, total)} of {total})");
+                            }
+                            break;
+                        }
+                
+                
+
+                    case "7": // Day 5 (improved in Day 6): Lookup loop (multi-search until blank)
+                        {
+                            while (true)
+                            {
+                                Console.Write("\nType a word (ENTER to stop): ");
+                                string ws = (Console.ReadLine() ?? "").Trim();
+
+                                // stop the inner loop if user presses ENTER
+                                if (string.IsNullOrWhiteSpace(ws))
+                                    break;
+
+                                // get frequency AFTER trimming / blank check
+                                int f = index.FrequencyOf(ws);
+
+                                if (f == 0)
+                                {
+                                    Console.WriteLine($"'{ws}' not found in text file.");
+                                    continue; // go back to ask for the next word
+                                }
+
+                                Console.WriteLine($"Frequency: {f}");
+
+                                // Print up to 30 line numbers for readability
+                                int shown = 0, total = 0;
+                                foreach (int ln in index.LinesFor(ws))
+                                {
+                                    total++;
+                                    if (shown == 0) Console.Write("Lines: ");
+                                    if (shown < 30)
+                                    {
+                                        if (shown > 0) Console.Write(",");
+                                        Console.Write(ln);
+                                        shown++;
+                                    }
+                                }
+
+                                if (total > 30) Console.Write(" ...");
+                                Console.WriteLine($"  ({Math.Min(shown, total)} of {total})");
                             }
                             break;
                         }
@@ -162,6 +192,26 @@ namespace starterCode
             }*/
 
         }
+        // Day 6: show words in pages of chunkLimit (default 30)
+        static void ShowWordPages(IEnumerable<(string word, int count)> wordEntries, int chunkLimit = 30)
+        {
+            int countSoFar = 0;
+
+            foreach (var (term, tally) in wordEntries)
+            {
+                Console.WriteLine($"{term} : {tally}");
+                countSoFar++;
+
+                if (countSoFar % chunkLimit == 0)
+                {
+                    Console.Write("Press ENTER to see next 30 words, or any other key to return to menu...");
+                    var pauseKey = Console.ReadKey(intercept: true);
+                    Console.WriteLine();
+                    if (pauseKey.Key != ConsoleKey.Enter)
+                        break; // stop showing words
+                }
+            }
+        }
 
         // Day-1: build the index from file, return index and total words
         static (WordIndex index, int totalWords) BuildIndexFromFile()
@@ -171,7 +221,7 @@ namespace starterCode
             int numberWords = 0;
 
             // delimiters that split words
-            char[] delimiters = { ' ', ',', '"', ':', ';', '?', '!', '-', '.', '\'', '*' };
+            char[] delimiters = { ' ', ',', '"', ':', ';', '?', '!', '-', '.', '\'', '*', ')', '(', '[', ']' };
 
             var index = new WordIndex();
 
