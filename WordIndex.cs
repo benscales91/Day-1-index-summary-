@@ -8,7 +8,7 @@ namespace starterCode
     {
         private readonly Dictionary<string, WordStats> _index = new();
 
-        // summary: Add one occurrence of a word with the given line number.
+        // summary: Add a word occurrence at a given line number. 
         public void AddOccurrence(string word, int lineNumber)
         {
             if (!_index.ContainsKey(word))
@@ -19,7 +19,7 @@ namespace starterCode
             _index[word].LineNumbers.Add(lineNumber);
         }
 
-        // summary: Number of unique words currently stored.
+        // Number of unique words currently stored.  
         public int UniqueCount() => _index.Count;
         // Count how many times a word occurs (case-insensitive)
         public int FrequencyOf(string word)

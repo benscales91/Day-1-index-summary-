@@ -33,19 +33,24 @@ namespace starterCode
             var lw = index.LongestWord();
             Console.WriteLine($"Longest word: '{lw.word}' (count={lw.count})");
 
+
             // Day 4: Alphabetical output menu
             while (true)
             {
+                // Day 4-5: Alphabetical output menu (plus Day 5 additions)
                 Console.WriteLine("\nMenu:");
                 Console.WriteLine(" 1) List all words A to Z");
                 Console.WriteLine(" 2) List all words Z to A");
                 Console.WriteLine(" 3) Preview first 50 words A to Z");
                 Console.WriteLine(" 4) Preview first 50 words Z to A");
-                Console.WriteLine(" 5) Quit");
+                Console.WriteLine(" 5) Show longest word");                          // Day 5
+                Console.WriteLine(" 6) Search word (frequency with line numbers)");  // Day 5
+                Console.WriteLine(" 7) Search loop (keep searching words)");         // Day 5
+                Console.WriteLine(" 8) Exit");
                 Console.Write("Select: ");
                 var option = Console.ReadLine();
 
-                if (string.IsNullOrWhiteSpace(option) || option == "5")
+                if (string.IsNullOrWhiteSpace(option) || option == "8")
                     break;
 
                 switch (option)
@@ -55,7 +60,7 @@ namespace starterCode
                         foreach (var (word, count) in index.AllSorted(true))
                             Console.WriteLine($"{word} : {count}");
                         break;
-
+                    
                     case "2":
                         Console.WriteLine("\nAll words Z to A:");
                         foreach (var (word, count) in index.AllSorted(false))
@@ -74,13 +79,75 @@ namespace starterCode
                             Console.WriteLine($"{word} : {count}");
                         break;
 
+                    case "5": // Day 5: Longest word search
+                        {
+                            var longestWord = index.LongestWord();
+                            Console.WriteLine($"Longest word: '{longestWord.word}' (count={longestWord.count})");
+                            break;
+                        }
+
+                    case "6": // Day 5: Single search
+                        {
+                            Console.Write("Enter a word: ");
+                            string ws = (Console.ReadLine() ?? "").Trim();
+
+                            int f = index.FrequencyOf(ws);
+                            Console.WriteLine($"Frequency: {f}");
+
+                            // Print up to 30 line numbers for readability
+                            int shown = 0, total = 0;
+                            foreach (int ln in index.LinesFor(ws))
+                            {
+                                total++;
+                                if (shown == 0) Console.Write("Lines: ");
+                                if (shown < 30)
+                                {
+                                    if (shown > 0) Console.Write(",");
+                                    Console.Write(ln);
+                                    shown++;
+                                }
+                            }
+                            if (total == 0) Console.WriteLine("Lines: (none)");
+                            else { if (total > 30) Console.Write(" ..."); Console.WriteLine($"  ({Math.Min(shown, total)} of {total})"); }
+                            break;
+                        }
+
+                    case "7": // Day 5: Lookup loop (multi-search until blank)
+                        {
+                            while (true)
+                            {
+                                Console.Write("\nEnter a word (ENTER to stop): ");
+                                var ws = Console.ReadLine();
+                                if (string.IsNullOrWhiteSpace(ws)) break;
+
+                                int f = index.FrequencyOf(ws);
+                                Console.WriteLine($"Frequency: {ws}");
+
+                                int shown = 0, total = 0;
+                                foreach (int ln in index.LinesFor(ws))
+                                {
+                                    total++;
+                                    if (shown == 0) Console.Write("Lines: ");
+                                    if (shown < 30)
+                                    {
+                                        if (shown > 0) Console.Write(",");
+                                        Console.Write(ln);
+                                        shown++;
+                                    }
+                                }
+                                if (total == 0) Console.WriteLine("Lines: (none)");
+                                else { if (total > 30) Console.Write(" ..."); Console.WriteLine($"  ({Math.Min(shown, total)} of {total})"); }
+                            }
+                            break;
+                        }
+
                     default:
-                        Console.WriteLine("Please enter 1–5.");
+                        Console.WriteLine("Please select 1–8.");
                         break;
                 }
             }
-
-            // Day-2: interactive queries
+ 
+            /* Day-2: interactive queries (Obsolete with Day-5 menu options)
             while (true)
             {
                 Console.Write("\nEnter a word to search (or just press ENTER to quit): ");
@@ -92,13 +159,11 @@ namespace starterCode
                 Console.WriteLine(lines.Count == 0
                     ? "No occurrences."
                     : $"Lines: {string.Join(",", lines.Take(25))}{(lines.Count > 25 ? "..." : "")}");
-            }
+            }*/
 
-            
         }
 
-
-        // Day-1: build index, no queries, no per-word printing
+        // Day-1: build the index from file, return index and total words
         static (WordIndex index, int totalWords) BuildIndexFromFile()
         {
             linesInFile = File.ReadAllLines(fileName);
