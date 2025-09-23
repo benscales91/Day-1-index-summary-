@@ -7,8 +7,14 @@ namespace starterCode
 {
     internal class Program
     {
-        static string fileName = "mobydick.txt"; // file to read
+        static string fileName = "sample.txt"; // file to read
         static string[] linesInFile;
+        static readonly HashSet<string> RomanBlacklist = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "i","ii","iii","iv","v","vi","vii","viii","ix","x",
+            "xi","xii","xiii","xiv","xv","xvi","xvii","xviii","xix","xx"
+        };
+
 
         static void Main(string[] args)
         {
@@ -73,14 +79,16 @@ namespace starterCode
                         break;
 
                     case "3":
-                        Console.WriteLine("\nPreview A to Z (first 50):");
-                        foreach (var (word, count) in index.AllSorted(true).Take(50))
+                        
+                        Console.WriteLine("\nPreview A to Z (first 30):");
+                        foreach (var (word, count) in index.AllSorted(true).Take(30))
                             Console.WriteLine($"{word} : {count}");
                         break;
 
                     case "4":
-                        Console.WriteLine("\nPreview Z to A (first 50):");
-                        foreach (var (word, count) in index.AllSorted(false).Take(50))
+
+                        Console.WriteLine("\nPreview Z to A (first 30):");
+                        foreach (var (word, count) in index.AllSorted(false).Take(30))
                             Console.WriteLine($"{word} : {count}");
                         break;
 
@@ -126,8 +134,6 @@ namespace starterCode
                             }
                             break;
                         }
-                
-                
 
                     case "7": // Day 5 (improved in Day 6): Lookup loop (multi-search until blank)
                         {
@@ -176,39 +182,24 @@ namespace starterCode
                         break;
                 }
             }
- 
-            /* Day-2: interactive queries (Obsolete with Day-5 menu options)
-            while (true)
-            {
-                Console.Write("\nEnter a word to search (or just press ENTER to quit): ");
-                var input = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(input)) break;
-
-                Console.WriteLine($"Frequency: {index.FrequencyOf(input)}");
-                var lines = index.LinesFor(input).ToList();
-                Console.WriteLine(lines.Count == 0
-                    ? "No occurrences."
-                    : $"Lines: {string.Join(",", lines.Take(25))}{(lines.Count > 25 ? "..." : "")}");
-            }*/
-
         }
         // Day 6: show words in pages of chunkLimit (default 30)
-        static void ShowWordPages(IEnumerable<(string word, int count)> wordEntries, int chunkLimit = 30)
+        static void ShowWordPages(IEnumerable<(string word, int count)> entries, int chunkSize = 30)
         {
-            int countSoFar = 0;
+            int shown = 0;
 
-            foreach (var (term, tally) in wordEntries)
+            foreach (var (term, tally) in entries)
             {
                 Console.WriteLine($"{term} : {tally}");
-                countSoFar++;
+                shown++;
 
-                if (countSoFar % chunkLimit == 0)
+                if (shown % chunkSize == 0)
                 {
-                    Console.Write("Press ENTER to see next 30 words, or any other key to return to menu...");
-                    var pauseKey = Console.ReadKey(intercept: true);
+                    Console.Write("Press 'ENTER' to view the next page, or any other key to return to menu...");
+                    var key = Console.ReadKey(intercept: true);
                     Console.WriteLine();
-                    if (pauseKey.Key != ConsoleKey.Enter)
-                        break; // stop showing words
+                    if (key.Key != ConsoleKey.Enter)
+                        break; // stop paging
                 }
             }
         }
@@ -243,10 +234,44 @@ namespace starterCode
             return (index, numberWords);
         }
 
-        // keep this helper – it filters real words only
-        static bool isWord(string str)
+       // Day 7: Rules for filtering roman numerals and non-words
+
+       // Whitelist of real words/abbreviations that contain Roman numbers
+       static readonly HashSet<string> keepIfRomanish = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+       {
+           
+        "i","mix","div","dix","li","mi","xi","di", "civic",   // everyday/valid words
+        "civil", "immix", "livid", "mimic", "villi", "vivid", // everyday/valid words
+        "cc","cd","cv","dc","mc","md", // abbreviations
+        "cdi","clix","liv" // proper/trade names
+        
+       };
+
+        // Decide whether a token is a genuine word for indexing
+        static bool isWord(string token)
         {
-            return Regex.IsMatch(str, @"\b(?:[a-z]{2,}|[ai])\b", RegexOptions.IgnoreCase);
+            if (string.IsNullOrWhiteSpace(token)) return false;
+
+            // letters only; allow single-letter a/i
+            if (!Regex.IsMatch(token, @"^(?:[A-Za-z]{2,}|[AaIi])$"))
+                return false;
+
+            // If it's composed only of I,V,X,L,C,D,M, treat it as a Roman numeral candidate.
+            // Keep ONLY if it's on the curated allow-list above.
+            if (Regex.IsMatch(token, @"^[ivxlcdm]+$", RegexOptions.IgnoreCase))
+                return keepIfRomanish.Contains(token);
+
+            return true;
         }
     }
 }
+
+    
+
+
+
+
+
+
+
+
